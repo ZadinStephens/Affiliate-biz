@@ -6,3 +6,4 @@ node_modules/
 
 # Local env variables
 .env.local
+.vercel
