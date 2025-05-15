@@ -1,20 +1,15 @@
-// components/LikeButton.js
-import { useContext } from 'react'
-import { UserContext } from '../pages/_app'
-import useRequireAuth from '../hooks/useRequireAuth'
+import { supabase } from "../supabaseClient";
+import useRequireAuth from "../hooks/useRequireAuth";
 
 export default function LikeButton({ itemId }) {
-  const { supabase } = useContext(UserContext)
-  const requireAuth  = useRequireAuth()
+  const requireAuth = useRequireAuth();
 
   const handleLike = async () => {
-    if (!requireAuth()) return
-    const { error } = await supabase
-      .from('likes')
-      .insert([{ item_id: itemId }])
-    if (error) console.error(error)
-    else alert('Liked!')
-  }
+    if (!requireAuth()) return;
+    const { error } = await supabase.from("likes").insert([{ item_id: itemId }]);
+    if (error) console.error(error);
+    else alert("Liked!");
+  };
 
-  return <button onClick={handleLike}>♥ Like</button>
+  return <button onClick={handleLike}>♥ Like</button>;
 }

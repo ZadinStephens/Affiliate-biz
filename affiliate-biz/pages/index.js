@@ -1,68 +1,64 @@
 // pages/index.js
-import Link from 'next/link'
-import { supabase } from '../supabaseClient'
-import LikeButton from '../components/LikeButton'
-import SaveButton from '../components/SaveButton'
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
+import ProductCard from "../components/ProductCard";
+import VideoEmbed from "../components/VideoEmbed";
+import LikeButton from "../components/LikeButton";
+import SaveButton from "../components/SaveButton";
 
-export default function Home({ items }) {
+export default function Home() {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchFeed = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          id,
+          title,
+          description,
+          product_image,
+          affiliate_url,
+          video_id,
+          videos (
+            embed_url
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading products:", error.message);
+      } else {
+        setProducts(data);
+      }
+    };
+
+    fetchFeed();
+  }, []);
+
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Featured Fashion</h1>
-      <div
-        style={{
-          display: 'grid',
-          gap: '1rem',
-          gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))'
-        }}
-      >
-        {items.map(item => (
+    <div className="grid gap-10 max-w-4xl mx-auto px-4 py-8">
+      {products.length === 0 ? (
+        <p className="text-center text-gray-500">No products posted yet.</p>
+      ) : (
+        products.map((product) => (
           <div
-            key={item.id}
-            style={{
-              position: 'relative',
-              padding: '1rem',
-              border: '1px solid #ccc',
-              borderRadius: '8px'
-            }}
+            key={product.id}
+            className="bg-white border border-gray-200 rounded-lg shadow p-4 flex flex-col gap-4"
           >
-            <Link
-              href={`/video/${item.video_id}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <img
-                src={item.product_image}
-                alt={item.title}
-                style={{
-                  width: '100%',
-                  maxHeight: '300px',
-                  objectFit: 'cover',
-                  marginBottom: '.5rem'
-                }}
-              />
-              <h2 style={{ margin: '0 0 .5rem 0' }}>{item.title}</h2>
-            </Link>
+            {product.videos?.embed_url && (
+              <VideoEmbed url={product.videos.embed_url} />
+            )}
 
-            <div style={{ display: 'flex', gap: '.5rem' }}>
-              <LikeButton itemId={item.id} />
-              <SaveButton itemId={item.id} />
+            <ProductCard product={product} />
+
+            <div className="flex gap-4 mt-2">
+              <LikeButton itemId={product.id} />
+              <SaveButton itemId={product.id} />
             </div>
           </div>
-        ))}
-      </div>
+        ))
+      )}
     </div>
-  )
-}
-
-export async function getServerSideProps() {
-  const { data: items, error } = await supabase
-    .from('products')
-    .select('id, video_id, title, product_image')
-    .order('created_at', { ascending: false })
-    .limit(9)
-
-  return {
-    props: {
-      items: items || []
-    }
-  }
+  );
 }

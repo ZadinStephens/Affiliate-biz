@@ -1,18 +1,16 @@
 // hooks/useRequireAuth.js
-import { useContext } from 'react'
-import { useRouter } from 'next/router'
-import { UserContext } from '../pages/_app'
+import { useRouter } from "next/router";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 
 export default function useRequireAuth() {
-  const { user } = useContext(UserContext)
-  const router   = useRouter()
+  const { session } = useSessionContext();
+  const router = useRouter();
 
   return () => {
-    if (!user) {
-      router.push('/login')
-      return false
+    if (!session?.user) {
+      router.push("/login");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 }
-
