@@ -14,22 +14,27 @@ export default function Dashboard() {
     }
   }, [session, isLoading, router]);
 
-  if (isLoading) return <p className="text-center mt-20">Loading...</p>;
+  if (isLoading)
+    return (
+      <p className="container" style={{ textAlign: "center", marginTop: "80px" }}>
+        Loading...
+      </p>
+    );
 
   if (!session) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold mb-6">Add a Product</h1>
+    <div className="container">
+      <h1 className="title">Add a Product</h1>
 
       <AmazonRedirectSearch />
 
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-2">Or paste an Amazon link</h2>
+      <div className="card" style={{ marginTop: "20px" }}>
+        <h2 className="subtitle">Or paste an Amazon link</h2>
         <input
           type="url"
           placeholder="https://www.amazon.com/…&tag=yourtag-20"
-          className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+          className="input"
           onKeyDown={async (e) => {
             if (e.key !== "Enter") return;
             const url = e.currentTarget.value.trim();
@@ -49,7 +54,7 @@ export default function Dashboard() {
             router.push("/");
           }}
         />
-        <p className="text-sm text-gray-500 mt-1">Press Enter to save this link.</p>
+        <p className="small">Press Enter to save this link.</p>
       </div>
     </div>
   );

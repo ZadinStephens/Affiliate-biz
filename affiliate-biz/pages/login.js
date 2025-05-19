@@ -1,87 +1,121 @@
-// pages/login.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useSessionContext } from "@supabase/auth-helpers-react";
 import { supabase } from "../supabaseClient";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { session, isLoading } = useSessionContext();
-
+  const { session } = useSessionContext();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
 
-  // ✅ Automatically redirect if already logged in
+  const { redirect = "/", intent, itemId, target } = router.query;
+
   useEffect(() => {
-    if (!isLoading && session) {
-      router.replace("/dashboard");
+    if (session) {
+      if (intent && itemId) {
+        localStorage.setItem(
+          "postLoginIntent",
+          JSON.stringify({ intent, itemId, target })
+        );
+      }
+      router.replace(redirect);
     }
-  }, [session, isLoading, router]);
+  }, [session, redirect, intent, itemId, target]);
 
-  const handleEmailLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let result;
+    if (isSignup) {
+      result = await supabase.auth.signUp({ email, password });
+    } else {
+      result = await supabase.auth.signInWithPassword({ email, password });
+    }
     setLoading(false);
-    if (error) alert(error.message);
-    else router.push("/dashboard");
+    if (result.error) alert(result.error.message);
   };
 
-  const handleGoogleLogin = () => {
-    supabase.auth.signInWithOAuth({
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: window.location.origin + "/dashboard",
-      },
+      options: { redirectTo: window.location.origin + "/login" },
     });
   };
 
+  const handleForgotPassword = async () => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) alert("Error sending reset link.");
+    else alert("Password reset link sent.");
+  };
+
   return (
-    <div style={{ padding: "2rem", maxWidth: "400px", margin: "auto" }}>
-      <h1>Log In</h1>
+    <div className="container auth-container">
+      <div className="card auth-card">
+        <h1 className="title">{isSignup ? "Sign Up" : "Log In"}</h1>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              required
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              required
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+            />
+          </div>
 
-      {/* Google login */}
-      <button
-        onClick={handleGoogleLogin}
-        style={{
-          width: "100%",
-          padding: ".75rem",
-          background: "#4285F4",
-          color: "#fff",
-          border: "none",
-          borderRadius: "4px",
-          marginBottom: "1rem",
-          cursor: "pointer",
-        }}
-      >
-        Continue with Google
-      </button>
+          <div className="form-row">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isSignup}
+                onChange={() => setIsSignup(!isSignup)}
+                className="checkbox"
+              />
+              <span>Create account</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="link"
+            >
+              Forgot password?
+            </button>
+          </div>
 
-      <hr style={{ margin: "2rem 0" }} />
+          <button type="submit" disabled={loading} className="button">
+            {loading
+              ? isSignup
+                ? "Signing up…"
+                : "Signing in…"
+              : isSignup
+              ? "Sign Up"
+              : "Sign In"}
+          </button>
 
-      {/* Email/password login */}
-      <form onSubmit={handleEmailLogin} style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: ".5rem" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: ".5rem" }}
-        />
-        <button type="submit" disabled={loading} style={{ padding: ".75rem", cursor: "pointer" }}>
-          {loading ? "Signing in…" : "Sign In"}
-        </button>
-      </form>
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="button secondary"
+          >
+            Continue with Google
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
